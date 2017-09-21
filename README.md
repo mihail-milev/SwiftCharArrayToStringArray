@@ -26,17 +26,32 @@ static const char* LIST_OF_CURRENCIES[] = {"AFN", "ALL", "AMD", "ANG", "AOA", "A
 # The Swift function
 Here is the source code and after it, I will try to explain what happens on each line.
 ```Swift
-private func currArrTest() -> [String] {
-    return withUnsafePointer(to: &LIST_OF_CURRENCIES, {(_ param: UnsafePointer) -> [String] in // 1
-        var ret : [String] = [] // 2
-        let bigTuple = param.pointee // 3
-        for bigTupleChild in Mirror(reflecting: bigTuple).children { // 4
-            let cArrayElementPointer : UnsafePointer<Int8> = bigTupleChild.value as! UnsafePointer<Int8> // 5
-            let strData : Data = Data(bytes: cArrayElementPointer, count: Int(3)) // 6
-            let finalString : String = String(data: strData, encoding: String.Encoding.utf8)! // 7
-            ret.append(finalString) // 8
+    private func currArrTest() -> [String] {
+        var ret : [String] = [] // 1
+        let bigTuple = LIST_OF_CURRENCIES // 2
+        for bigTupleChild in Mirror(reflecting: bigTuple).children { // 3
+            let cArrayElementPointer : UnsafePointer<Int8> = bigTupleChild.value as! UnsafePointer<Int8> // 4
+            let strData : Data = Data(bytes: cArrayElementPointer, count: Int(3)) // 5
+            let finalString : String = String(data: strData, encoding: String.Encoding.utf8)! // 6
+            ret.append(finalString) // 7
         }
-        return ret // 9
-    })
-}
+        return ret // 8
+    }
 ```
+# Explanation
+## Line 1
+We define here a variable array, to which we are going to append the strings from the static array. This is going to be our return variable.
+## Line 2
+Why do we call the parameter "bigTuple"? Because this is how Swift "sees" the static char pointer array. It really "sees" it as a big tuple of pointers. So actually for Swift LIST_OF_CURRENCIES is of type (UnsafePointer<Int8>?, UnsafePointer<Int8>?, UnsafePointer<Int8>?, ... ) and so one.
+## Line 3
+The "Mirror" function is part of the Swift Reflection API. I found [this tutorial](https://appventure.me/2015/10/24/swift-reflection-api-what-you-can-do/) to be very interesting and informative on this topic. In our case, the Mirror function allows us to programmatically iterate over the tuple, without needing to hard code 160 (in some cases probably more) requests to the tuple. You can imagine this, as creating an iterator over the tuple.
+## Line 4
+As stated in the comment for Line 2, each element of the tuple is actually a pointer to 8 bits. Swift provides us in such cases with the typed unsafe pointer: UnsafePointer<Int8>.
+## Line 5
+We can now convert this UnsafePointer<Int8> to a Data (NSData for Objective-C fans) object. Here is a tricky part. You must know how long your string is. I have it easy, because my strings are always 3 characters big. Of course, there are methods to overcome this problem, by searching for the '\0' character, counting, etc. But this can get ugly. My suggestion in case you have strings of different length: padd all of them to the length of the longest one with empty spaces. Then at line 7 below, trim them.
+## Line 6
+We can now use the String initializator with the option "data" to convert this Data object to a string.
+## Line 7
+Append the new string to our array. Trim if needed.
+## Line 8
+Finally return your new array. And voilà! You now have converted a C-style char pointer array to a Swift String array.
