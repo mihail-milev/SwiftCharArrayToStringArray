@@ -15,7 +15,7 @@ Before you continue, I think you should really know what are char pointers in C,
 # Preparation
 You basically need two files in your project:
 1. A C header file, which contains the static char pointer array and (since we know how big this array is) a static constant containing the size of the array.
-2. A Swift class, or playground, which have access to the header.
+2. A Swift class, or playground, which have access to the header. This can happen through a bridging header for example.
 
 # The static char pointer array
 It could look something like this in your header. I am using here a long list of all possible (hopefully) currencies in the world (source: [List of currencies of the world](https://www.countries-ofthe-world.com/world-currencies.html)).
